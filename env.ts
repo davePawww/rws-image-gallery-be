@@ -2,16 +2,17 @@ import { z } from "zod";
 import { configDotenv as loadEnv } from "dotenv";
 
 // Determine application stage
-process.env.APP_STAGE = process.env.APP_STAGE || "dev";
+process.env.NODE_ENV = process.env.NODE_ENV || "development";
 
-const isProduction = process.env.APP_STAGE === "production";
-const isDevelopment = process.env.APP_STAGE === "dev";
-const isTesting = process.env.APP_STAGE === "test";
+// Helper functions for environment checks
+export const isProd = () => process.env.NODE_ENV === "production";
+export const isDev = () => process.env.NODE_ENV === "development";
+export const isTest = () => process.env.NODE_ENV === "test";
 
 // Load .env files based on environment
-if (isDevelopment) {
+if (isDev()) {
   loadEnv(); // Loads .env
-} else if (isTesting) {
+} else if (isTest()) {
   loadEnv({ path: ".env.test" }); // Loads .env.test
 }
 
@@ -20,7 +21,6 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-  APP_STAGE: z.enum(["dev", "production", "test"]).default("dev"),
 
   // Server Configuration
   PORT: z.coerce.number().default(3000),
@@ -41,7 +41,7 @@ const envSchema = z.object({
   // Logging Configuration
   LOG_LEVEL: z
     .enum(["error", "warn", "info", "debug", "trace"])
-    .default(isProduction ? "info" : "debug"),
+    .default(isProd() ? "info" : "debug"),
 });
 
 // Type inference from schema
@@ -65,11 +65,6 @@ try {
   }
   throw error;
 }
-
-// Helper functions for environment checks
-export const isProd = () => env.NODE_ENV === "production";
-export const isDev = () => env.NODE_ENV === "development";
-export const isTest = () => env.NODE_ENV === "test";
 
 // Export the validated environment
 export { env };
